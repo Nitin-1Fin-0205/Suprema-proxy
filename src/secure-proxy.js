@@ -21,7 +21,7 @@ const CONFIG = {
     'http://localhost:3000',
     'http://localhost:8080',
   ],
-  targetServer: process.env.TARGET_SERVER || 'http://localhost:8084',
+  targetServer: process.env.TARGET_SERVER || 'http://127.0.0.1:8084',
   port: process.env.PORT || PORT,
   isDevelopment: process.env.NODE_ENV !== 'production'
 };
@@ -446,7 +446,7 @@ function startSecureProxy() {
   // Create HTTPS server
   server = https.createServer(httpsOptions, app);
 
-  server.listen(CONFIG.port, '127.0.0.1', () => {
+  server.listen(CONFIG.port, () => {
     logger.info('Suprema Secure HTTPS Proxy started', {
       port: CONFIG.port,
       targetServer: CONFIG.targetServer,
@@ -458,9 +458,10 @@ function startSecureProxy() {
     console.log('========================================');
     console.log('  SUPREMA SECURE HTTPS PROXY STARTED  ');
     console.log('========================================');
-    console.log(`  HTTPS URL: https://127.0.0.1:${CONFIG.port}`);
+    console.log(`  HTTPS URL: https://localhost:${CONFIG.port}`);
+    console.log(`  Alternative: https://127.0.0.1:${CONFIG.port}`);
     console.log(`  Target: ${CONFIG.targetServer}`);
-    console.log(`  Health: https://127.0.0.1:${CONFIG.port}/health`);
+    console.log(`  Health: https://localhost:${CONFIG.port}/health`);
     console.log('  Certificate: 10-year self-signed');
     console.log('========================================');
 

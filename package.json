@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Production-ready proxy server for Suprema biometric devices with auto-start capabilities",
   "main": "src/proxy.js",
-  "bin": "src/proxy.js",  "scripts": {
+  "bin": "src/proxy.js",
+  "scripts": {
     "build-secure": "pkg src/secure-proxy.js --targets node18-win-x64 --output dist/suprema-secure-proxy.exe",
     "start": "powershell -ExecutionPolicy Bypass -File scripts/start-secure-proxy-background.ps1",
     "stop": "taskkill /IM suprema-secure-proxy.exe /F",
@@ -23,8 +24,7 @@
     ]
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "http-proxy-middleware": "^3.0.5"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "pkg": "^5.8.1"

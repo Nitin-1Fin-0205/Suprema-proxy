@@ -177,6 +177,52 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Session status endpoint
+app.get('/session-status', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin && CONFIG.allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  const hasSession = !!(req.query.username || req.headers.cookie?.includes('username='));
+  const sessionId = req.query.username || req.headers.cookie?.match(/username=([^;]+)/)?.[1];
+
+  res.json({
+    status: 'ok',
+    hasSession: hasSession,
+    sessionId: sessionId ? `${sessionId.substring(0, 8)}...` : null,
+    timestamp: new Date().toISOString(),
+    server: 'Suprema Secure Proxy'
+  });
+});
+
+// Session validation middleware for biometric operations
+app.use('/api', (req, res, next) => {
+  // Check for session ID in biometric operations
+  const isBiometricOperation = req.originalUrl.includes('capture') ||
+    req.originalUrl.includes('deviceInfo') ||
+    req.originalUrl.includes('initialize');
+
+  if (isBiometricOperation && !req.query.username && !req.headers.cookie?.includes('username=')) {
+    logger.warn(`Biometric operation without session: ${req.method} ${req.originalUrl}`);
+
+    const origin = req.headers.origin;
+    if (origin && CONFIG.allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    return res.status(400).json({
+      error: 'Session Required',
+      message: 'Biometric operations require a valid session ID',
+      suggestion: 'Please create a session first using /api/createSessionID'
+    });
+  }
+
+  next();
+});
+
 // Custom request forwarder using native Node.js HTTP with extended timeout for biometric operations
 async function forwardRequest(req, res) {
   try {
@@ -189,6 +235,15 @@ async function forwardRequest(req, res) {
 
     // Prepare request options
     const filteredHeaders = { ...req.headers };
+
+    // Handle session ID from URL parameter and convert to cookie format
+    if (req.query.username) {
+      filteredHeaders.cookie = filteredHeaders.cookie
+        ? `${filteredHeaders.cookie}; username=${req.query.username}`
+        : `username=${req.query.username}`;
+
+      logger.info(`Session ID forwarded: ${req.query.username.substring(0, 8)}...`);
+    }
 
     // Remove problematic headers that shouldn't be forwarded
     delete filteredHeaders['host'];
@@ -215,14 +270,19 @@ async function forwardRequest(req, res) {
       timeout: timeout,
     };
 
+    // Enhanced logging with session info
     if (isCapture) {
-      logger.info(`Biometric capture request: ${req.method} ${req.originalUrl} to ${CONFIG.targetServer} (${timeout}ms timeout)`);
+      const sessionId = req.query.username;
+      logger.info(`Biometric capture request: ${req.method} ${req.originalUrl} to ${CONFIG.targetServer} (${timeout}ms timeout)${sessionId ? ` [Session: ${sessionId.substring(0, 8)}...]` : ' [No Session]'}`);
     } else {
       logger.info(`Forwarding ${req.method} ${req.originalUrl} to ${CONFIG.targetServer}`);
     }
 
     console.log(`[DEBUG] Target URL: ${targetUrl.href}`);
     console.log(`[DEBUG] Request path: ${options.path}`);
+    if (req.query.username) {
+      console.log(`[DEBUG] Session ID parameter: ${req.query.username.substring(0, 8)}...`);
+    }
     console.log(`[DEBUG] Headers:`, Object.keys(options.headers));
 
     // Choose HTTP or HTTPS
@@ -276,6 +336,17 @@ async function forwardRequest(req, res) {
       if (origin && CONFIG.allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
+      }
+
+      // Add session-specific error handling
+      if (error.message.includes('session') || error.message.includes('unauthorized')) {
+        res.status(401).json({
+          error: 'Session Error',
+          message: 'Invalid or expired biometric session',
+          target: CONFIG.targetServer,
+          suggestion: 'Please create a new session and try again'
+        });
+        return;
       }
 
       if (error.code === 'ECONNREFUSED') {
@@ -355,10 +426,10 @@ async function forwardRequest(req, res) {
   }
 }
 
-// Handle all routes except /health by forwarding to target server
+// Handle all routes except /health and /session-status by forwarding to target server
 app.use((req, res, next) => {
-  // Skip health endpoint
-  if (req.path === '/health') {
+  // Skip health and session-status endpoints
+  if (req.path === '/health' || req.path === '/session-status') {
     return next();
   }
   forwardRequest(req, res);
@@ -462,6 +533,7 @@ function startSecureProxy() {
     console.log(`  Alternative: https://127.0.0.1:${CONFIG.port}`);
     console.log(`  Target: ${CONFIG.targetServer}`);
     console.log(`  Health: https://localhost:${CONFIG.port}/health`);
+    console.log(`  Session Status: https://localhost:${CONFIG.port}/session-status`);
     console.log('  Certificate: 10-year self-signed');
     console.log('========================================');
 

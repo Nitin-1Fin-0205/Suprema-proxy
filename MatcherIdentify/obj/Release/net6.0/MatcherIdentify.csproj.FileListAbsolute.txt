@@ -1,0 +1,14 @@
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\bin\Release\net6.0\MatcherIdentify.exe
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\bin\Release\net6.0\MatcherIdentify.deps.json
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\bin\Release\net6.0\MatcherIdentify.runtimeconfig.json
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\bin\Release\net6.0\MatcherIdentify.dll
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\bin\Release\net6.0\MatcherIdentify.pdb
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.AssemblyInfoInputs.cache
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.AssemblyInfo.cs
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.csproj.CoreCompileInputs.cache
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.dll
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\refint\MatcherIdentify.dll
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.pdb
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\MatcherIdentify.genruntimeconfig.cache
+C:\Users\nitin\1Finance\support_backend-\MatcherIdentify\obj\Release\net6.0\ref\MatcherIdentify.dll

@@ -1,42 +1,43 @@
-SUPREMA SECURE PROXY
-===================
+SUPREMA SECURE PROXY - DEPLOYMENT PACKAGE
+==========================================
 
-This package contains everything needed to install and run the Suprema Secure Proxy
-as a Windows service.
+This package contains everything needed to install and run the Suprema Secure Proxy.
 
 WHAT'S INCLUDED
 ---------------
-- suprema-secure-proxy.exe    - Main proxy application
-- localhost.crt               - SSL certificate for HTTPS
-- localhost.key               - SSL private key
-- install.bat                 - Windows service installer (Batch)
-- install.ps1                 - Windows service installer (PowerShell) 
-- uninstall.bat               - Service uninstaller
-- status.bat                  - Service status checker
-- README.txt                  - This file
+- suprema-secure-proxy.exe   : Main proxy application
+- install.bat               : Installation script  
+- uninstall.bat             : Removal script
+- status.bat                : Status checker
+- certs/localhost.crt       : SSL certificate (matches your working system)
+- certs/localhost.key       : SSL private key
+- README.txt                : This file
 
-SYSTEM REQUIREMENTS
--------------------
-- Windows 10 or Windows Server 2016 or later
-- Node.js (any recent version) installed and in PATH
-- Administrator privileges for installation
-- Port 3443 available (will be configured automatically)
+INSTALLATION
+------------
+1. Extract the ZIP file to any folder
+2. Right-click install.bat and select "Run as administrator" 
+3. Follow the installation prompts
+4. The proxy will be installed to: C:\Program Files\Suprema Secure Proxy
 
-QUICK INSTALLATION
-------------------
-1. Extract all files to a temporary directory
-2. Right-click on "install.bat" and select "Run as administrator"
-   OR
-   Open PowerShell as administrator and run ".\install.ps1"
-3. Follow the on-screen prompts
-4. Test the installation by visiting https://localhost:3443/health
+USAGE
+-----
+After installation:
+- Proxy runs automatically on system startup
+- Access via: https://localhost:4000
+- Health check: https://localhost:4000/health
+- Session status: https://localhost:4000/session-status
 
-The installer will:
-- Install the proxy as a Windows service
-- Copy files to C:\Program Files\Suprema Secure Proxy
-- Install and trust the SSL certificate
-- Configure Windows Firewall
-- Start the service automatically
+CERTIFICATE NOTES
+-----------------
+The SSL certificate included matches your working local system and is already 
+trusted by Windows. The deployment should work without certificate warnings.
+
+If you see certificate warnings in Chrome:
+1. Click "Advanced" 
+2. Click "Proceed to localhost (unsafe)"
+
+This is normal Chrome behavior for localhost certificates.
 
 WHAT THE PROXY DOES
 -------------------

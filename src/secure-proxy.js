@@ -8,6 +8,9 @@ const { URL } = require('url');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// Import BiometricRoutes
+const BiometricRoutes = require('./biometric.routes.js');
+
 const app = express();
 const PORT = 4000;
 
@@ -148,6 +151,14 @@ function ensureCertificatesExist() {
     }
   }
 }
+
+// Body parsing middleware for JSON requests
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Initialize biometric routes
+const biometricRoutes = new BiometricRoutes(logger, CONFIG);
+app.use('/bio', biometricRoutes.getRouter());
 
 // CORS middleware
 app.use((req, res, next) => {
@@ -426,10 +437,12 @@ async function forwardRequest(req, res) {
   }
 }
 
-// Handle all routes except /health and /session-status by forwarding to target server
+// Handle all routes except proxy-specific endpoints by forwarding to target server
 app.use((req, res, next) => {
-  // Skip health and session-status endpoints
-  if (req.path === '/health' || req.path === '/session-status') {
+  // Skip proxy-specific endpoints that are handled locally
+  if (req.path === '/health' ||
+    req.path === '/session-status' ||
+    req.path.startsWith('/bio/')) {
     return next();
   }
   forwardRequest(req, res);
@@ -534,6 +547,7 @@ function startSecureProxy() {
     console.log(`  Target: ${CONFIG.targetServer}`);
     console.log(`  Health: https://localhost:${CONFIG.port}/health`);
     console.log(`  Session Status: https://localhost:${CONFIG.port}/session-status`);
+    console.log(`  Biometric ID: https://localhost:${CONFIG.port}/api/identify-fingerprint`);
     console.log('  Certificate: 10-year self-signed');
     console.log('========================================');
 

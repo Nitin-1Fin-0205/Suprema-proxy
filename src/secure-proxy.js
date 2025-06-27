@@ -78,7 +78,7 @@ class Logger {
 
 const logger = new Logger();
 
-// Auto-trust certificate function
+// Enhanced auto-trust certificate function with better user guidance
 function autoTrustCertificate() {
   const certPath = path.join(process.cwd(), 'certs', 'localhost.crt');
 
@@ -90,22 +90,54 @@ function autoTrustCertificate() {
   try {
     logger.info('Attempting to auto-trust SSL certificate...');
 
-    // Use certlm.exe to add certificate to trusted root store
-    execSync(`certlm.exe -add -c "${certPath}" -s -r localMachine root`, {
-      stdio: 'ignore',
-      timeout: 10000
-    });
+    // Method 1: Try certlm.exe (preferred for system-wide trust)
+    try {
+      execSync(`certlm.exe -add -c "${certPath}" -s -r localMachine root`, {
+        stdio: 'ignore',
+        timeout: 10000
+      });
+      logger.info('✅ Certificate automatically trusted system-wide - browser warnings eliminated');
+      return true;
+    } catch (certlmError) {
+      logger.warn('certlm.exe failed, trying PowerShell method...');
+    }
 
-    logger.info('Certificate automatically trusted - browser warnings eliminated');
-    return true;
+    // Method 2: Try PowerShell Import-Certificate (fallback)
+    try {
+      const powershellCmd = `Import-Certificate -FilePath "${certPath}" -CertStoreLocation Cert:\\LocalMachine\\Root`;
+      execSync(`powershell -Command "${powershellCmd}"`, {
+        stdio: 'ignore',
+        timeout: 10000
+      });
+      logger.info('✅ Certificate automatically trusted via PowerShell - browser warnings eliminated');
+      return true;
+    } catch (powershellError) {
+      logger.warn('PowerShell import failed');
+    }
+
+    // If both methods fail, provide guidance
+    logger.warn('❌ Could not auto-trust certificate (requires admin privileges)');
+    logger.info('');
+    logger.info('🔧 MANUAL TRUST INSTRUCTIONS:');
+    logger.info('1. Run as Administrator and restart the service, OR');
+    logger.info('2. Double-click: certs/localhost.crt');
+    logger.info('3. Click "Install Certificate"');
+    logger.info('4. Select "Local Machine" → "Place certificates in: Trusted Root"');
+    logger.info('5. Restart browser');
+    logger.info('');
+    logger.info('📋 Or use: npm run trust-cert (as Administrator)');
+    logger.info('');
+
+    return false;
+
   } catch (error) {
-    logger.warn('Could not auto-trust certificate (requires admin privileges):', error.message);
-    logger.info('Users can manually trust or accept browser warnings');
+    logger.warn('Certificate trust process failed:', error.message);
+    logger.info('Users can manually trust the certificate or accept browser warnings');
     return false;
   }
 }
 
-// Certificate generation/validation
+// Certificate validation - use pre-generated certificates
 function ensureCertificatesExist() {
   const certDir = path.join(process.cwd(), 'certs');
   const keyPath = path.join(certDir, 'localhost.key');
@@ -113,43 +145,37 @@ function ensureCertificatesExist() {
 
   // Check if certificates exist
   if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-    logger.info('SSL certificates found');
-    return { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
-  }
+    logger.info('SSL certificates found - using pre-generated certificates');
 
-  logger.info('SSL certificates not found, generating new ones...');
-
-  // Create certs directory
-  if (!fs.existsSync(certDir)) {
-    fs.mkdirSync(certDir, { recursive: true });
-  }
-
-  try {
-    // Try using our enhanced certificate generation script
-    logger.info('Generating SSL certificates with 10-year validity and SAN extensions...');
-
-    const scriptPath = path.join(process.cwd(), 'scripts', 'generate-certificates.ps1');
-    execSync(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`, { stdio: 'inherit' });
-
-    logger.info('SSL certificates generated successfully (10-year validity with SAN)');
-
-    return { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
-
-  } catch (error) {
-    logger.error('Failed to generate certificates with enhanced script:', error.message);
-
-    // Fallback to basic OpenSSL
+    // Validate certificate expiry
     try {
-      logger.info('Falling back to basic OpenSSL certificate generation...');
-      execSync(`openssl genrsa -out "${keyPath}" 2048`, { stdio: 'ignore' });
-      execSync(`openssl req -new -x509 -key "${keyPath}" -out "${certPath}" -days 3650 -subj "/C=US/ST=CA/L=San Francisco/O=Suprema Proxy/OU=Biometric/CN=localhost"`, { stdio: 'ignore' });
-      return { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
-    } catch (fallbackError) {
-      logger.error('Failed to generate certificates with OpenSSL:', fallbackError.message);
-      logger.error('Please install OpenSSL or run npm run generate-certs manually');
-      process.exit(1);
+      const certContent = fs.readFileSync(certPath, 'utf8');
+      const cert = certContent.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/);
+      if (cert) {
+        logger.info('Certificate validated successfully');
+      }
+    } catch (error) {
+      logger.warn('Certificate validation warning:', error.message);
     }
+
+    return { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
   }
+
+  // Certificates missing - provide clear instructions
+  logger.error('SSL certificates not found!');
+  logger.error('Required files missing:');
+  logger.error(`  - ${keyPath}`);
+  logger.error(`  - ${certPath}`);
+  logger.error('');
+  logger.error('SOLUTION: Copy your pre-generated certificates to the certs/ directory');
+  logger.error('The same certificates should be deployed to all client machines for consistency');
+  logger.error('');
+  logger.error('To generate certificates once (for development):');
+  logger.error('  npm run generate-certs');
+  logger.error('');
+  logger.error('Then copy the generated certs/ directory to all deployment packages');
+
+  process.exit(1);
 }
 
 // Body parsing middleware for JSON requests

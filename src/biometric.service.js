@@ -3,11 +3,12 @@ const path = require('path');
 const { execSync, execFile } = require('child_process');
 const https = require('https');
 const http = require('http');
-const axios = require('axios');
+
 class BiometricService {
     constructor(logger) {
         this.apiURL = 'https://newuat.support-backend.onefin.app';
         this.logger = logger;
+        // Use process.cwd() instead of relative path for pkg compatibility
         this.tempDir = path.join(process.cwd(), 'temp_templates');
         this.matcherPath = path.join(process.cwd(), 'MatcherIdentify', 'bin', 'Release', 'net6.0', 'MatcherIdentify.exe');
     }
@@ -52,17 +53,22 @@ class BiometricService {
         try {
             const apiEndpoint = `${this.apiURL}/biometrics/get-matched-customer-locker?customerId=${customerId}`;
 
-
             this.logger.info('Calling external API for locker access:', apiEndpoint);
-            const response = await axios.get(apiEndpoint, {
-                timeout: 10000
+            const response = await fetch(apiEndpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Suprema-Proxy-BiometricService/1.0'
+                },
+                signal: AbortSignal.timeout(10000)
             });
-            this.logger.info('External API response:', response.status, response.data);
-            if (response.status !== 200) {
-                throw new Error(`Failed to fetch locker d: ${response.status} ${response.statusText}`);
-            }
-            return response.data;
 
+            if (!response.ok) {
+                throw new Error(`Failed to fetch locker data: ${response.status} ${response.statusText}`);
+            }
+            const data = await response.json();
+            this.logger.info('External API response:', response.status, data);
+            return data;
 
         } catch (error) {
             this.logger.error('Failed to call external API:', error.message);
@@ -76,21 +82,21 @@ class BiometricService {
 
             let apiUrl = `${this.apiURL}/biometrics/get-templates`;
             this.logger.info('Using templates API:', apiUrl);
-            const response = await axios.get(apiUrl, {
+            const response = await fetch(apiUrl, {
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     'User-Agent': 'Suprema-Proxy-BiometricService/1.0'
                 },
-                timeout: 10000
+                signal: AbortSignal.timeout(10000)
             });
 
             console.log('Response from templates API:', response.status);
 
-
-            if (response.status !== 200) {
+            if (!response.ok) {
                 throw new Error(`Failed to fetch templates: ${response.status} ${response.statusText}`);
             }
-            const templates = response.data;
+            const templates = await response.json();
             this.logger.info(`Fetched ${templates.length} templates from database`);
             return templates;
         } catch (error) {
@@ -118,8 +124,9 @@ class BiometricService {
             }
 
             // Save live template
-            const tempDir = path.join(__dirname, 'matcher_temp');
-            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+            // Use process.cwd() instead of __dirname for pkg compatibility
+            const tempDir = path.join(process.cwd(), 'matcher_temp');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
             const livePath = path.join(tempDir, 'live.dat');
             fs.writeFileSync(livePath, Buffer.from(templateData, 'base64'));
@@ -224,9 +231,10 @@ class BiometricService {
     // Clean up old template files (older than 1 hour)
     cleanupOldTemplates() {
         try {
+            // Use process.cwd() for pkg compatibility
             const tempDirs = [
                 path.join(process.cwd(), 'temp_templates'),
-                path.join(__dirname, 'matcher_temp')
+                path.join(process.cwd(), 'matcher_temp')
             ];
 
             tempDirs.forEach(tempDir => {

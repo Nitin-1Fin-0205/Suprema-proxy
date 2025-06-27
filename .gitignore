@@ -8,3 +8,5 @@ logs/
 *.pem
 *.key
 *.crt
+
+/production-deployment/

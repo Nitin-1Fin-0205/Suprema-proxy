@@ -9,4 +9,5 @@ logs/
 *.key
 *.crt
 
-/production-deployment/
+/production-deployment/MatcherIdentify/*
+

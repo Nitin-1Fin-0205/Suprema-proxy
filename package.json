@@ -2,12 +2,13 @@
   "name": "suprema-proxy",
   "version": "1.0.0",
   "description": "Production-ready proxy server for Suprema biometric devices with auto-start capabilities",
-  "main": "src/proxy.js",
+  "main": "src/server.js",
   "bin": "src/proxy.js",
   "scripts": {
     "build-secure": "pkg src/secure-proxy.js --targets node18-win-x64 --output dist/suprema-secure-proxy.exe && node scripts/add-icon.js",
     "build-production": "pkg src/secure-proxy.js --targets node18-win-x64 --output production-deployment/suprema-secure-proxy.exe && node scripts/add-icon.js",
-    "start": "powershell -ExecutionPolicy Bypass -File scripts/start-secure-proxy-background.ps1",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "stop": "taskkill /IM suprema-secure-proxy.exe /F",
     "restart": "npm run stop && npm run start",
     "status": "powershell -Command \"Get-Process -Name suprema-secure-proxy -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime\"",
@@ -22,7 +23,9 @@
     "assets": [
       "package.json",
       "certs/**/*",
-      "assets/app-icon.ico"
+      "assets/app-icon.ico",
+      "MatcherIdentify/**/*",
+      "matcher_temp/**/*"
     ],
     "targets": [
       "node18-win-x64"
@@ -30,7 +33,8 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "pkg": "^5.8.1"
+    "pkg": "^5.8.1",
+    "node-fetch": "3.3.2"
   },
   "devDependencies": {
     "rcedit": "^4.0.1"

@@ -18,7 +18,8 @@ if exist "%PACKAGE_FILE%" (
 
 rem Create the ZIP package with all deployment files
 echo Adding files to package...
-powershell -Command "Compress-Archive -Path '*.exe', '*.bat', '*.txt', 'certs', 'logs', 'MatcherIdentify' -DestinationPath '%PACKAGE_FILE%' -Force"
+rem Updated to include MatcherCapture and exclude MatcherIdentify
+powershell -Command "Compress-Archive -Path '*.exe', '*.bat', '*.txt', 'certs', 'logs', 'MatcherCapture', 'matcher_temp' -DestinationPath '%PACKAGE_FILE%' -Force"
 
 if exist "%PACKAGE_FILE%" (
     echo.
@@ -28,7 +29,8 @@ if exist "%PACKAGE_FILE%" (
     echo - suprema-secure-proxy.exe (with custom icon and version info)
     echo - Installation scripts (INSTALL.bat, UNINSTALL.bat, etc.)
     echo - SSL certificates (certs folder)
-    echo - Biometric matcher (MatcherIdentify folder)
+    echo - Biometric matcher (MatcherCapture folder)
+    echo - matcher_temp directory
     echo - Documentation (README.txt, VERSION.txt)
     echo - Log directory (logs folder)
     echo.

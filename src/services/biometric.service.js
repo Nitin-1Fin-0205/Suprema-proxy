@@ -5,48 +5,11 @@ const https = require('https');
 const http = require('http');
 const { execSync, execFile } = require('child_process');
 
-// const fetch = require('node-fetch');
-
 class BiometricService {
     constructor(logger, config) {
         this.apiURL = config && config.apiURL ? config.apiURL : 'https://newuat.support-backend.onefin.app';
         this.logger = logger;
         this.tempDir = path.join(process.cwd(), 'temp_templates');
-        this.matcherPath = path.join(process.cwd(), 'MatcherIdentify', 'bin', 'Release', 'net6.0', 'MatcherIdentify.exe');
-    }
-
-    async executematcher(liveTemplatePath, dbListPath) {
-        try {
-            this.logger.info('Executing fingerprint matcher...');
-
-            // Check if matcher executable exists
-            if (!fs.existsSync(this.matcherPath)) {
-                throw new Error(`Matcher executable not found: ${this.matcherPath}`);
-            }
-
-            // Execute the matcher with timeout
-            const command = `"${this.matcherPath}" "${liveTemplatePath}" "${dbListPath}"`;
-            this.logger.info('Matcher command:', command);
-
-            const result = execSync(command, {
-                timeout: 30000, // 30 second timeout
-                encoding: 'utf8'
-            }).trim();
-
-            const matchedIndex = parseInt(result);
-            this.logger.info('Matcher result:', matchedIndex);
-
-            return matchedIndex;
-
-        } catch (error) {
-            this.logger.error('Matcher execution failed:', error.message);
-
-            if (error.code === 'TIMEOUT') {
-                throw new Error('Matcher execution timed out');
-            }
-
-            throw new Error('Matcher execution failed: ' + error.message);
-        }
     }
 
     // Call external API with match result
@@ -255,7 +218,7 @@ class BiometricService {
             if (error.code === 'TIMEOUT') {
                 throw new Error('Fingerprint capture timed out');
             }
-            throw new Error('Fingerprint capture failed: ' + error.message);
+            throw new Error('Fingerprint capture failed: ');
         }
     }
 

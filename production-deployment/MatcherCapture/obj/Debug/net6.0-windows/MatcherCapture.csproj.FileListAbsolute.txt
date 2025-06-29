@@ -1,0 +1,5 @@
+C:\Users\nitin\1Finance\proxy_biometric_agent\suprema-proxy\MatcherCapture\obj\Debug\net6.0-windows\MatcherCapture.csproj.AssemblyReference.cache
+C:\Users\nitin\1Finance\proxy_biometric_agent\suprema-proxy\MatcherCapture\obj\Debug\net6.0-windows\MatcherCapture.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nitin\1Finance\proxy_biometric_agent\suprema-proxy\MatcherCapture\obj\Debug\net6.0-windows\MatcherCapture.AssemblyInfoInputs.cache
+C:\Users\nitin\1Finance\proxy_biometric_agent\suprema-proxy\MatcherCapture\obj\Debug\net6.0-windows\MatcherCapture.AssemblyInfo.cs
+C:\Users\nitin\1Finance\proxy_biometric_agent\suprema-proxy\MatcherCapture\obj\Debug\net6.0-windows\MatcherCapture.csproj.CoreCompileInputs.cache

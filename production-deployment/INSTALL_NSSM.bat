@@ -57,4 +57,7 @@ echo   nssm remove SupremaProxy  - Uninstall service
 echo.
 echo The proxy will now run as a true Windows service (hidden, auto-restart)!
 echo.
+
+%NSSM% start SupremaProxy
+
 pause

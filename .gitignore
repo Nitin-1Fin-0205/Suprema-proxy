@@ -9,5 +9,6 @@ logs/
 *.key
 *.crt
 
-/production-deployment/MatcherIdentify/*
+/production-deployment/MatcherIdentify/
+/BioMini
 

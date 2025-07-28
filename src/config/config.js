@@ -6,6 +6,7 @@ module.exports = {
         'http://localhost:5173',
         'https://localhost:5173',
         'https://newuat.eos.onefin.app',
+        'https://lms.onefin.app',
         'https://uat.lms.onefin.app',
         'http://localhost:3000',
         'http://localhost:8080',

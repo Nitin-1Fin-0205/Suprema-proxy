@@ -7,7 +7,7 @@ const { execSync, execFile } = require('child_process');
 
 class BiometricService {
     constructor(logger, config) {
-        this.apiURL = config && config.apiURL ? config.apiURL : 'https://newuat.support-backend.onefin.app';
+        this.apiURL = config && config.apiURL ? config.apiURL : 'https://support-backend.onefin.app';
         this.logger = logger;
         this.tempDir = path.join(process.cwd(), 'temp_templates');
     }

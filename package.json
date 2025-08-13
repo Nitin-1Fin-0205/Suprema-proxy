@@ -6,7 +6,7 @@
   "bin": "src/server.js",
   "scripts": {
     "build-secure": "pkg src/server.js --targets node18-win-x64 --output dist/suprema-secure-proxy.exe && node scripts/add-icon.js",
-    "build-production": "pkg src/server.js --targets node18-win-x64 --output production-deployment/suprema-secure-proxy.exe && node scripts/add-icon.js",
+    "build-production": "pkg src/server.js --targets node18-win-x64 --output production-deployment/suprema-secure-proxy.exe",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "stop": "taskkill /IM suprema-secure-proxy.exe /F",

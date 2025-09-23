@@ -2,10 +2,10 @@
   "name": "suprema-proxy",
   "version": "1.0.0",
   "description": "Production-ready proxy server for Suprema biometric devices with auto-start capabilities",
-  "main": "src/server.js",
-  "bin": "src/server.js",
+  "main": "src/app.js",
+  "bin": "src/app.js",
   "scripts": {
-    "build-secure": "pkg src/server.js --targets node18-win-x64 --output dist/suprema-secure-proxy.exe && node scripts/add-icon.js",
+    "build-secure": "pkg src/server.js --targets node18-win-x64 --output dist/suprema-secure-proxy.exe ",
     "build-production": "pkg src/server.js --targets node18-win-x64 --output production-deployment/suprema-secure-proxy.exe",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",

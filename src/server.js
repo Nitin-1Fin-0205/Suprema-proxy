@@ -43,10 +43,7 @@ function startSecureProxy() {
         console.log('  SUPREMA SECURE HTTPS PROXY STARTED  ');
         console.log('========================================');
         console.log(`  HTTPS URL: https://localhost:${config.port}`);
-        console.log(`  Alternative: https://127.0.0.1:${config.port}`);
-        console.log(`  Target: ${config.targetServer}`);
         console.log(`  Health: https://localhost:${config.port}/health`);
-        console.log(`  Session Status: https://localhost:${config.port}/session-status`);
         console.log(`  Biometric ID: https://localhost:${config.port}/api/identify-fingerprint`);
         console.log('  Certificate: 10-year self-signed');
         console.log('========================================');

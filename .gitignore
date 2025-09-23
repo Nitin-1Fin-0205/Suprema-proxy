@@ -11,4 +11,5 @@ logs/
 
 /production-deployment/MatcherIdentify/
 /BioMini
-
+temp_templates/
+*.env

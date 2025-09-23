@@ -16,4 +16,5 @@ module.exports = {
     isDevelopment: process.env.NODE_ENV !== 'production',
     logDir: path.join(process.cwd(), 'logs'),
     certDir: path.join(process.cwd(), 'certs'),
+    apiURL: 'localhost:3000',
 };

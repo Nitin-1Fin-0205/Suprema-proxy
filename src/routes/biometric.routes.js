@@ -36,6 +36,8 @@ class BiometricRoutes {
         this.router.post('/identify-fingerprint', async (req, res) => {
             const startTime = Date.now();
 
+            const AuthToken = req.headers.authorization;
+
             try {
                 this.setCorsHeaders(req, res);
 
@@ -59,7 +61,7 @@ class BiometricRoutes {
 
                 // Process fingerprint identification
                 this.logger.info('Calling biometric service for identification...');
-                const identificationResult = await this.biometricService.identifyFingerprint(liveTemplate);
+                const identificationResult = await this.biometricService.identifyFingerprint(liveTemplate, req.headers.authorization);
 
                 this.logger.info('Biometric service result:', {
                     hasStatusCode: !!identificationResult.status_code,

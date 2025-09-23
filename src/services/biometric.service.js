@@ -4,16 +4,28 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const { execSync, execFile } = require('child_process');
+const BiometricEncryptionHelper = require('../utils/encryption.helper');
 
 class BiometricService {
     constructor(logger, config) {
-        this.apiURL = config && config.apiURL ? config.apiURL : 'https://support-backend.onefin.app';
+        this.apiURL = 'https://support-backend.onefin.app';
         this.logger = logger;
         this.tempDir = path.join(process.cwd(), 'temp_templates');
+
+        console.log('API URL set to:', this.apiURL);
+
+        // Initialize encryption helper (only if environment variable is set)
+        try {
+            this.encryptionHelper = new BiometricEncryptionHelper();
+            this.logger.info('Biometric encryption helper initialized successfully');
+        } catch (error) {
+            this.logger.warn('Biometric encryption helper not available:', error.message);
+            this.encryptionHelper = null;
+        }
     }
 
     // Call external API with match result
-    async getCustomerLockerAccess(customerId) {
+    async getCustomerLockerAccess(customerId, authToken) {
         try {
             const apiEndpoint = `${this.apiURL}/biometrics/get-matched-customer-locker?customerId=${customerId}`;
 
@@ -22,7 +34,8 @@ class BiometricService {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'Suprema-Proxy-BiometricService/1.0'
+                    'User-Agent': 'Suprema-Proxy-BiometricService/1.0',
+                    'Authorization': authToken ? authToken : ''
                 },
                 signal: AbortSignal.timeout(10000)
             });
@@ -40,7 +53,7 @@ class BiometricService {
         }
     }
 
-    async fetchTemplatesFromDatabase() {
+    async fetchTemplatesFromDatabase(authToken) {
         try {
             this.logger.info('Fetching templates from database...');
 
@@ -50,7 +63,8 @@ class BiometricService {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'User-Agent': 'Suprema-Proxy-BiometricService/1.0'
+                    'User-Agent': 'Suprema-Proxy-BiometricService/1.0',
+                    'Authorization': authToken ? authToken : ''
                 },
                 signal: AbortSignal.timeout(10000)
             });
@@ -70,12 +84,12 @@ class BiometricService {
     }
 
     // Main fingerprint identification process
-    async identifyFingerprint(templateData) {
+    async identifyFingerprint(templateData, authToken) {
         let filesToCleanup = [];
 
         try {
             // 1. Fetch templates from database
-            const storedTemplates = await this.fetchTemplatesFromDatabase();
+            const storedTemplates = await this.fetchTemplatesFromDatabase(authToken);
 
             if (!storedTemplates || storedTemplates.length === 0) {
                 return {
@@ -93,12 +107,28 @@ class BiometricService {
             const probePath = path.join(tempDir, 'probe.tpl');
             fs.writeFileSync(probePath, Buffer.from(templateData, 'base64'));
 
-            // Write all stored templates to disk
+            // Write all stored templates to disk with decryption
             const galleryListPath = path.join(tempDir, 'gallery_list.txt');
             const idMap = {};
             const galleryPaths = storedTemplates.map((record, index) => {
+                let templateData = record.template_data;
+
+                // Decrypt template if encryption helper is available
+                if (this.encryptionHelper) {
+                    try {
+                        templateData = this.encryptionHelper.safeDecryptTemplate(templateData);
+                        this.logger.info(`Template ${index} decrypted successfully for customer ${record.customer_id}`);
+                    } catch (decryptError) {
+                        this.logger.error(`Failed to decrypt template ${index} for customer ${record.customer_id}:`, decryptError.message);
+                        // Use original template data if decryption fails
+                        templateData = record.template_data;
+                    }
+                } else {
+                    this.logger.info(`Template ${index} used without decryption (encryption helper not available)`);
+                }
+
                 const filePath = path.join(tempDir, `gallery_${index}.tpl`);
-                fs.writeFileSync(filePath, Buffer.from(record.template_data, 'base64'));
+                fs.writeFileSync(filePath, Buffer.from(templateData, 'base64'));
                 idMap[index] = record;
                 return filePath;
             });
@@ -158,7 +188,7 @@ class BiometricService {
                     }
 
                     const matched = idMap[matchIndex];
-                    const lockerAccess = await this.getCustomerLockerAccess(matched.customer_id);
+                    const lockerAccess = await this.getCustomerLockerAccess(matched.customer_id, authToken);
 
                     return resolve({
                         status_code: 200,

@@ -5,6 +5,8 @@ const https = require('https');
 const http = require('http');
 const { execSync, execFile } = require('child_process');
 const BiometricEncryptionHelper = require('../utils/encryption.helper');
+const LocalBiometricDB = require('../database/local-biometric.db');
+const SecureBiometricEncryption = require('../utils/secure-encryption.helper');
 
 class BiometricService {
     constructor(logger, config) {
@@ -14,13 +16,38 @@ class BiometricService {
 
         console.log('API URL set to:', this.apiURL);
 
-        // Initialize encryption helper (only if environment variable is set)
+        // Initialize secure encryption helper
+        try {
+            this.secureEncryption = new SecureBiometricEncryption(logger);
+            this.logger.info('Secure biometric encryption helper initialized successfully');
+        } catch (error) {
+            this.logger.error('Failed to initialize secure encryption:', error.message);
+            throw error;
+        }
+
+        // Initialize legacy encryption helper (backward compatibility)
         try {
             this.encryptionHelper = new BiometricEncryptionHelper();
-            this.logger.info('Biometric encryption helper initialized successfully');
+            this.logger.info('Legacy biometric encryption helper initialized successfully');
         } catch (error) {
-            this.logger.warn('Biometric encryption helper not available:', error.message);
+            this.logger.warn('Legacy biometric encryption helper not available:', error.message);
             this.encryptionHelper = null;
+        }
+
+        // Initialize local database
+        try {
+            const dbPath = path.join(process.cwd(), 'data', 'biometric.db');
+            const dbKey = this.secureEncryption.generateDBKey();
+            this.localDB = new LocalBiometricDB(dbPath, dbKey, logger);
+            this.logger.info('Local biometric database initialized successfully');
+        } catch (error) {
+            this.logger.error('Failed to initialize local database:', error.message);
+            throw error;
+        }
+
+        // Validate encryption setup
+        if (!this.secureEncryption.validateEncryption()) {
+            throw new Error('Encryption validation failed - system not secure');
         }
     }
 
@@ -53,6 +80,47 @@ class BiometricService {
         }
     }
 
+    // Store customer template locally with encryption
+    storeCustomerTemplate(customerId, templateData, fingerPosition, qualityScore = 0) {
+        try {
+            this.logger.info(`Storing template for customer: ${customerId}`);
+
+            // Encrypt template data
+            const encryptedTemplate = this.secureEncryption.encryptTemplate(templateData, customerId);
+
+            // Store biometric template only
+            this.localDB.storeTemplate({
+                customer_id: customerId,
+                finger_position: fingerPosition,
+                template_data: encryptedTemplate,
+                quality_score: qualityScore
+            });
+
+            this.logger.info(`Template stored successfully for customer: ${customerId}`);
+            return { success: true, message: 'Template stored successfully' };
+
+        } catch (error) {
+            this.logger.error('Failed to store template locally:', error.message);
+            throw new Error('Failed to store template: ' + error.message);
+        }
+    }
+
+    // Fetch templates from local database
+    fetchTemplatesFromLocalDatabase() {
+        try {
+            this.logger.info('Fetching templates from local database...');
+
+            const templates = this.localDB.getAllTemplates();
+            this.logger.info(`Fetched ${templates.length} templates from local database`);
+
+            return templates;
+        } catch (error) {
+            this.logger.error('Error fetching templates from local database:', error.message);
+            throw new Error('Failed to fetch templates from local database: ' + error.message);
+        }
+    }
+
+    // Legacy method - fetch templates from remote database
     async fetchTemplatesFromDatabase(authToken) {
         try {
             this.logger.info('Fetching templates from database...');
@@ -83,21 +151,26 @@ class BiometricService {
         }
     }
 
-    // Main fingerprint identification process
-    async identifyFingerprint(templateData, authToken) {
+    // Main fingerprint identification process using LOCAL database
+    async identifyFingerprint(templateData, authToken = null) {
         let filesToCleanup = [];
 
         try {
-            // 1. Fetch templates from database
-            const storedTemplates = await this.fetchTemplatesFromDatabase(authToken);
+            this.logger.info('Starting fingerprint identification using local database...');
+
+            // 1. Fetch templates from LOCAL database
+            const storedTemplates = this.fetchTemplatesFromLocalDatabase();
 
             if (!storedTemplates || storedTemplates.length === 0) {
+                this.logger.warn('No templates found in local database');
                 return {
                     success: false,
-                    error: 'No templates found in database',
+                    error: 'No templates found in local database',
                     matched: false
                 };
             }
+
+            this.logger.info(`Found ${storedTemplates.length} templates in local database`);
 
             // Save live template
             // Use process.cwd() instead of __dirname for pkg compatibility
@@ -113,18 +186,25 @@ class BiometricService {
             const galleryPaths = storedTemplates.map((record, index) => {
                 let templateData = record.template_data;
 
-                // Decrypt template if encryption helper is available
-                if (this.encryptionHelper) {
-                    try {
-                        templateData = this.encryptionHelper.safeDecryptTemplate(templateData);
-                        this.logger.info(`Template ${index} decrypted successfully for customer ${record.customer_id}`);
-                    } catch (decryptError) {
-                        this.logger.error(`Failed to decrypt template ${index} for customer ${record.customer_id}:`, decryptError.message);
-                        // Use original template data if decryption fails
+                // Decrypt template using secure encryption helper
+                try {
+                    templateData = this.secureEncryption.safeDecryptTemplate(templateData);
+                    this.logger.info(`Template ${index} decrypted successfully for customer ${record.customer_id}`);
+                } catch (decryptError) {
+                    this.logger.error(`Failed to decrypt template ${index} for customer ${record.customer_id}:`, decryptError.message);
+
+                    // Try legacy decryption as fallback
+                    if (this.encryptionHelper) {
+                        try {
+                            templateData = this.encryptionHelper.safeDecryptTemplate(record.template_data);
+                            this.logger.info(`Template ${index} decrypted using legacy method`);
+                        } catch (legacyError) {
+                            this.logger.warn(`Both encryption methods failed for template ${index}, using raw data`);
+                            templateData = record.template_data;
+                        }
+                    } else {
                         templateData = record.template_data;
                     }
-                } else {
-                    this.logger.info(`Template ${index} used without decryption (encryption helper not available)`);
                 }
 
                 const filePath = path.join(tempDir, `gallery_${index}.tpl`);
@@ -188,16 +268,28 @@ class BiometricService {
                     }
 
                     const matched = idMap[matchIndex];
-                    const lockerAccess = await this.getCustomerLockerAccess(matched.customer_id, authToken);
+                    this.logger.info(`Fingerprint matched: Customer ${matched.customer_id}, Finger: ${matched.finger_name}`);
+
+                    // Get locker access info from remote server (if authToken provided)
+                    let lockerAccess = null;
+                    if (authToken) {
+                        try {
+                            lockerAccess = await this.getCustomerLockerAccess(matched.customer_id, authToken);
+                        } catch (error) {
+                            this.logger.warn('Failed to fetch locker access, proceeding without it:', error.message);
+                        }
+                    }
 
                     return resolve({
                         status_code: 200,
-                        message: 'Match found',
+                        message: 'Match found in local database',
                         data: {
                             customer_id: matched.customer_id,
-                            finger_name: matched.finger_name,
+                            finger_position: matched.finger_position,
                             match_index: matchIndex,
+                            quality_score: matched.quality_score,
                             locker_access: lockerAccess,
+                            source: 'local_database'
                         }
                     });
                 });

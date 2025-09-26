@@ -7,7 +7,7 @@ class BiometricEncryptionHelper {
         this.keyLength = 32; // 256 bits
         this.ivLength = 16;  // 128 bits
 
-        const biometricMasterKey = "fbe8db54bba6d9b1782ce14d6aebe2786462aa612e07901e0250cb7ccab4d2c9";
+        const biometricMasterKey = process.env.BIOMETRIC_MASTER_KEY;
 
         // In production, store this in environment variables
         if (!biometricMasterKey) {

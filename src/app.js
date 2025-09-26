@@ -4,6 +4,10 @@ const config = require('./config/config');
 const Logger = require('./logger/logger');
 const BiometricRoutes = require('./routes/biometric.routes');
 const corsMiddleware = require('./middleware/cors.middleware');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 const logger = new Logger(config.logDir);

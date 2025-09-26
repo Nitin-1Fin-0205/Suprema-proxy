@@ -16,6 +16,7 @@ class SecureBiometricEncryption {
     initializeMasterKey() {
         // Get master key from environment variable or generate new one
         const envKey = process.env.BIOMETRIC_MASTER_KEY;
+        console.log('Environment key:', envKey ? 'Found' : 'Not found');
 
         if (envKey) {
             this.masterKey = Buffer.from(envKey, 'hex');
@@ -52,11 +53,11 @@ class SecureBiometricEncryption {
             // Generate random IV
             const iv = crypto.randomBytes(this.ivLength);
 
-            // Create cipher
-            const cipher = crypto.createCipherGCM(this.algorithm, derivedKey, iv);
+            // Create cipher for AES-GCM
+            const cipher = crypto.createCipheriv(this.algorithm, derivedKey, iv);
 
             // Encrypt template data
-            let encrypted = cipher.update(templateData, 'base64', 'hex');
+            let encrypted = cipher.update(templateData, 'utf8', 'hex');
             encrypted += cipher.final('hex');
 
             // Get authentication tag
@@ -104,12 +105,12 @@ class SecureBiometricEncryption {
             );
 
             // Create decipher
-            const decipher = crypto.createDecipherGCM(this.algorithm, derivedKey, iv);
+            const decipher = crypto.createDecipheriv(this.algorithm, derivedKey, iv);
             decipher.setAuthTag(tag);
 
             // Decrypt
-            let decrypted = decipher.update(encrypted, 'hex', 'base64');
-            decrypted += decipher.final('base64');
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
 
             return decrypted;
 

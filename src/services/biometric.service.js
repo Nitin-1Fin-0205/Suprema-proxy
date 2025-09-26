@@ -37,7 +37,9 @@ class BiometricService {
         // Initialize local database
         try {
             const dbPath = path.join(process.cwd(), 'data', 'biometric.db');
-            const dbKey = this.secureEncryption.generateDBKey();
+            // const dbKey = this.secureEncryption.generateDBKey();
+            const dbKey = process.env.LOCAL_DB_KEY;
+
             this.localDB = new LocalBiometricDB(dbPath, dbKey, logger);
             this.logger.info('Local biometric database initialized successfully');
         } catch (error) {
@@ -48,6 +50,23 @@ class BiometricService {
         // Validate encryption setup
         if (!this.secureEncryption.validateEncryption()) {
             throw new Error('Encryption validation failed - system not secure');
+        }
+
+        {
+            // test
+
+            const testData = 'RSqRFZAAU0IaQnCtBhfDIK+FEkXBA4kJRuBhCCwHAUcCDMdgCwcnSKCggyTJEEMFEwlwDBEZinCvmCfK4ZqFBUshc48YSzAHIC4LUEIEJYwQmwQWjCAo+hhMMEJCM4wwnAIkDMBCgiFOQECBFo7QOQQYTuA7iRuO8EAGH08AQwQkTzCahS4PcJyKNpAQoAsfUCCaCiTQoZ6QLVEQpo4dEVCbESeRcKuQNJGApo4JUZCajhxRwZ+ULRHwAA4UkiGjDiMSwK6JDFMgpowflCCxCRSUca+KNJSxAIf/////////Bw4SFf//////////////AwkMDxEWGBr//////////3YGCw4RFBcZGhz///////92BAcLDxIVFxkaG////////3YDBgoPExcYGRob//////9udQIFCg8UFxgZGhsd/////21ydgQLERYZGhobGxz///9gaG50AwwTGBobHBwcHCD/U15ka3IEDhYaHB0dHx0fH/9RXF9kbwMPGRwdHyAgICAh/1BXWV1mAREaHyAhISEiIiIjS1BSU1UDGRwfISIiIiEiIiNBRUZGQzUiHyAhIiIhISEhITs9Ozo5MSciISEhISAfHx0dNzc2NDItKCMiISAgHx0cGxwzMS8tKyklIiAdHRsbGRgWGS0qKCYkJCEcGRYVFRUTEhH//yEgHR0bGBQPCwkKCwoLC////xcVFhMQCwgEAwQFBgYH////EA4NCgkFAwF3dwECAwP///8NCQkIBgMBdnd2dwEB//8=';
+            this.storeCustomerTemplate('test_customer2', testData, 'left_index', 85).then(res => {
+                this.logger.info('Test template stored successfully');
+            }).catch(err => {
+                this.logger.error('Test template storage failed:', err.message);
+            });
+
+            this.identifyFingerprint(testData).then(res => {
+                this.logger.info('Test identification result:', res);
+            }).catch(err => {
+                this.logger.error('Test identification failed:', err.message);
+            });
         }
     }
 
@@ -81,7 +100,7 @@ class BiometricService {
     }
 
     // Store customer template locally with encryption
-    storeCustomerTemplate(customerId, templateData, fingerPosition, qualityScore = 0) {
+    async storeCustomerTemplate(customerId, templateData, fingerPosition, qualityScore = 0) {
         try {
             this.logger.info(`Storing template for customer: ${customerId}`);
 
@@ -161,6 +180,7 @@ class BiometricService {
             // 1. Fetch templates from LOCAL database
             const storedTemplates = this.fetchTemplatesFromLocalDatabase();
 
+
             if (!storedTemplates || storedTemplates.length === 0) {
                 this.logger.warn('No templates found in local database');
                 return {
@@ -189,6 +209,7 @@ class BiometricService {
                 // Decrypt template using secure encryption helper
                 try {
                     templateData = this.secureEncryption.safeDecryptTemplate(templateData);
+                    console.log('Decrypted template data:', templateData);
                     this.logger.info(`Template ${index} decrypted successfully for customer ${record.customer_id}`);
                 } catch (decryptError) {
                     this.logger.error(`Failed to decrypt template ${index} for customer ${record.customer_id}:`, decryptError.message);

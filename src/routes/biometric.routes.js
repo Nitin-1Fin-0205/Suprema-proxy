@@ -41,27 +41,34 @@ class BiometricRoutes {
             try {
                 this.setCorsHeaders(req, res);
 
-                // Validate request body
-                const { liveTemplate } = req.body;
+                this.logger.info('Fingerprint identification request received', {
+                    endpoint: '/bio/identify-fingerprint'
+                });
 
-                if (!liveTemplate) {
-                    this.logger.warn('Fingerprint identification attempted without live template');
+                // Capture live fingerprint from device
+                this.logger.info('Capturing live fingerprint from device...');
+                const captureResult = await this.biometricService.captureFingerprint();
+
+                if (!captureResult || !captureResult.tplBase64) {
+                    this.logger.warn('Fingerprint capture failed - no template data');
                     return res.status(400).json({
                         success: false,
-                        error: 'Missing Template',
-                        message: 'Live fingerprint template is required',
-                        suggestion: 'Please provide liveTemplate in the request body'
+                        error: 'Capture Failed',
+                        message: 'Failed to capture fingerprint from device',
+                        suggestion: 'Please ensure the fingerprint device is connected and try again'
                     });
                 }
 
-                this.logger.info('Fingerprint identification request received', {
+                const liveTemplate = captureResult.tplBase64;
+                this.logger.info('Fingerprint captured successfully', {
                     templateSize: liveTemplate.length,
                     endpoint: '/bio/identify-fingerprint'
                 });
 
+                console.log(Buffer.from(liveTemplate).toString('base64'));
                 // Process fingerprint identification
                 this.logger.info('Calling biometric service for identification...');
-                const identificationResult = await this.biometricService.identifyFingerprint(liveTemplate, req.headers.authorization);
+                const identificationResult = await this.biometricService.identifyFingerprint(liveTemplate, AuthToken);
 
                 this.logger.info('Biometric service result:', {
                     hasStatusCode: !!identificationResult.status_code,
@@ -125,20 +132,14 @@ class BiometricRoutes {
                 this.logger.info('Fingerprint capture request received', {
                     endpoint: '/bio/capture-fingerprint'
                 });
+
+                console.log('Request body:', req.body);
+                const { customer_id, finger_position } = req.body;
                 // Call the biometric service to capture fingerprint
-                const captureResult = await this.biometricService.captureFingerprint();
+                const captureResult = await this.biometricService.captureAndStoreFingerprint(customer_id, finger_position);
                 const duration = Date.now() - startTime;
                 // Return both file paths and base64 data for flexibility
-                return res.status(200).json({
-                    success: true,
-                    bmpPath: captureResult.bmpPath,
-                    tplPath: captureResult.tplPath,
-                    bmpBase64: captureResult.bmpBuffer.toString('base64'),
-                    tplBase64: captureResult.tplBuffer.toString('base64'),
-                    duration,
-                    timestamp: new Date().toISOString(),
-                    endpoint: '/bio/capture-fingerprint'
-                });
+                return res.status(200).json(captureResult);
             } catch (error) {
                 const duration = Date.now() - startTime;
                 this.logger.error('Fingerprint capture endpoint error:', {
@@ -157,6 +158,22 @@ class BiometricRoutes {
                 });
             }
         });
+
+        // List biometrics for a specific customer
+        this.router.get('/list-biometrics/:customerId', async (req, res) => {
+            try {
+                this.setCorsHeaders(req, res);
+                const customerId = req.params.customerId;
+                if (!customerId) return res.status(400).json({ success: false, error: 'customerId required' });
+                const templates = await this.biometricService.getCustomerTemplates(customerId);
+                return res.status(200).json(templates);
+            } catch (error) {
+                this.logger.error('List biometrics error:', error.message);
+                this.setCorsHeaders(req, res);
+                return res.status(500).json({ success: false, error: error.message });
+            }
+        });
+
 
         // Device info endpoint
         this.router.get('/device-info', async (req, res) => {

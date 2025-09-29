@@ -52,22 +52,22 @@ class BiometricService {
             throw new Error('Encryption validation failed - system not secure');
         }
 
-        {
-            // test
+        // {
+        //     test
 
-            const testData = 'RSqRFZAAU0IaQnCtBhfDIK+FEkXBA4kJRuBhCCwHAUcCDMdgCwcnSKCggyTJEEMFEwlwDBEZinCvmCfK4ZqFBUshc48YSzAHIC4LUEIEJYwQmwQWjCAo+hhMMEJCM4wwnAIkDMBCgiFOQECBFo7QOQQYTuA7iRuO8EAGH08AQwQkTzCahS4PcJyKNpAQoAsfUCCaCiTQoZ6QLVEQpo4dEVCbESeRcKuQNJGApo4JUZCajhxRwZ+ULRHwAA4UkiGjDiMSwK6JDFMgpowflCCxCRSUca+KNJSxAIf/////////Bw4SFf//////////////AwkMDxEWGBr//////////3YGCw4RFBcZGhz///////92BAcLDxIVFxkaG////////3YDBgoPExcYGRob//////9udQIFCg8UFxgZGhsd/////21ydgQLERYZGhobGxz///9gaG50AwwTGBobHBwcHCD/U15ka3IEDhYaHB0dHx0fH/9RXF9kbwMPGRwdHyAgICAh/1BXWV1mAREaHyAhISEiIiIjS1BSU1UDGRwfISIiIiEiIiNBRUZGQzUiHyAhIiIhISEhITs9Ozo5MSciISEhISAfHx0dNzc2NDItKCMiISAgHx0cGxwzMS8tKyklIiAdHRsbGRgWGS0qKCYkJCEcGRYVFRUTEhH//yEgHR0bGBQPCwkKCwoLC////xcVFhMQCwgEAwQFBgYH////EA4NCgkFAwF3dwECAwP///8NCQkIBgMBdnd2dwEB//8=';
-            this.storeCustomerTemplate('test_customer2', testData, 'left_index', 85).then(res => {
-                this.logger.info('Test template stored successfully');
-            }).catch(err => {
-                this.logger.error('Test template storage failed:', err.message);
-            });
+        //     const testData = 'RSqRFZAAU0IaQnCtBhfDIK+FEkXBA4kJRuBhCCwHAUcCDMdgCwcnSKCggyTJEEMFEwlwDBEZinCvmCfK4ZqFBUshc48YSzAHIC4LUEIEJYwQmwQWjCAo+hhMMEJCM4wwnAIkDMBCgiFOQECBFo7QOQQYTuA7iRuO8EAGH08AQwQkTzCahS4PcJyKNpAQoAsfUCCaCiTQoZ6QLVEQpo4dEVCbESeRcKuQNJGApo4JUZCajhxRwZ+ULRHwAA4UkiGjDiMSwK6JDFMgpowflCCxCRSUca+KNJSxAIf/////////Bw4SFf//////////////AwkMDxEWGBr//////////3YGCw4RFBcZGhz///////92BAcLDxIVFxkaG////////3YDBgoPExcYGRob//////9udQIFCg8UFxgZGhsd/////21ydgQLERYZGhobGxz///9gaG50AwwTGBobHBwcHCD/U15ka3IEDhYaHB0dHx0fH/9RXF9kbwMPGRwdHyAgICAh/1BXWV1mAREaHyAhISEiIiIjS1BSU1UDGRwfISIiIiEiIiNBRUZGQzUiHyAhIiIhISEhITs9Ozo5MSciISEhISAfHx0dNzc2NDItKCMiISAgHx0cGxwzMS8tKyklIiAdHRsbGRgWGS0qKCYkJCEcGRYVFRUTEhH//yEgHR0bGBQPCwkKCwoLC////xcVFhMQCwgEAwQFBgYH////EA4NCgkFAwF3dwECAwP///8NCQkIBgMBdnd2dwEB//8=';
+        //     this.storeCustomerTemplate('test_customer2', testData, 'left_index', 85).then(res => {
+        //         this.logger.info('Test template stored successfully');
+        //     }).catch(err => {
+        //         this.logger.error('Test template storage failed:', err.message);
+        //     });
 
-            this.identifyFingerprint(testData).then(res => {
-                this.logger.info('Test identification result:', res);
-            }).catch(err => {
-                this.logger.error('Test identification failed:', err.message);
-            });
-        }
+        //     this.identifyFingerprint(testData).then(res => {
+        //         this.logger.info('Test identification result:', res);
+        //     }).catch(err => {
+        //         this.logger.error('Test identification failed:', err.message);
+        //     });
+        // }
     }
 
     // Call external API with match result
@@ -121,6 +121,38 @@ class BiometricService {
         } catch (error) {
             this.logger.error('Failed to store template locally:', error.message);
             throw new Error('Failed to store template: ' + error.message);
+        }
+    }
+
+
+    async getCustomerTemplates(customerId) {
+        try {
+            this.logger.info(`Fetching templates for customer: ${customerId}`);
+            const templates = await this.localDB.getCustomerTemplates(customerId);
+            this.logger.info(`Fetched ${templates.length} templates for customer: ${customerId}`);
+
+            console.log('Templates fetched:', templates);
+            const response = {
+                status_code: 200,
+                message: 'Biometric records retrieved successfully',
+                data: {
+                    biometrics: templates.map(t => ({
+                        id: t.id,
+                        fingerPosition: t.finger_position,
+                        fingerName: t.finger_position.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        quality: t.quality_score,
+                        createdAt: "2025-09-26 16:08:44.568178+00",
+                        lastVerified: null,
+                        verificationCount: 0
+                    }))
+
+                }
+
+            }
+            return response;
+        } catch (error) {
+            this.logger.error('Failed to fetch customer templates:', error.message);
+            throw new Error('Failed to fetch customer templates: ' + error.message);
         }
     }
 
@@ -289,17 +321,19 @@ class BiometricService {
                     }
 
                     const matched = idMap[matchIndex];
+                    console.log('Matched record:', matched);
                     this.logger.info(`Fingerprint matched: Customer ${matched.customer_id}, Finger: ${matched.finger_name}`);
 
-                    // Get locker access info from remote server (if authToken provided)
-                    let lockerAccess = null;
-                    if (authToken) {
-                        try {
-                            lockerAccess = await this.getCustomerLockerAccess(matched.customer_id, authToken);
-                        } catch (error) {
-                            this.logger.warn('Failed to fetch locker access, proceeding without it:', error.message);
-                        }
-                    }
+                    // // Get locker access info from remote server (if authToken provided)
+                    // let lockerAccess = null;
+                    // if (authToken) {
+                    //     try {
+                    //         lockerAccess = await this.getCustomerLockerAccess(matched.customer_id, authToken);
+                    //         console.log('Locker access data:', lockerAccess);
+                    //     } catch (error) {
+                    //         this.logger.warn('Failed to fetch locker access, proceeding without it:', error.message);
+                    //     }
+                    // }
 
                     return resolve({
                         status_code: 200,
@@ -309,7 +343,7 @@ class BiometricService {
                             finger_position: matched.finger_position,
                             match_index: matchIndex,
                             quality_score: matched.quality_score,
-                            locker_access: lockerAccess,
+                            // locker_access: lockerAccess,
                             source: 'local_database'
                         }
                     });
@@ -327,15 +361,43 @@ class BiometricService {
     }
 
 
+    async captureAndStoreFingerprint(customerId, fingerPosition) {
+        try {
+            const captureResult = await this.captureFingerprint();
+            console.log('Capture result:', captureResult);
+
+            const { tplBase64 } = captureResult;
+            const qualityScore = await this.getQuality({ template: tplBase64 }).then(res => res?.quality).catch(err => {
+                this.logger.warn('Failed to get quality score:', err.message);
+                return 0;
+            });
+            console.log('Quality score:', qualityScore);
+            console.log(customerId, tplBase64, fingerPosition, qualityScore);
+
+            await this.storeCustomerTemplate(customerId, tplBase64, fingerPosition, qualityScore);
+            return {
+                success: true,
+                message: 'Fingerprint captured and stored successfully',
+                quality: qualityScore
+            };
+        } catch (error) {
+            this.logger.error('Error capturing and storing fingerprint:', error.message);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
     //#region Matcher Capture Functions Directly
-    async captureFingerprint(sessionId) {
+    async captureFingerprint() {
         try {
             const exePath = path.join(process.cwd(), 'MatcherCapture', 'bin', 'Release', 'net6.0-windows', 'MatcherCapture.exe');
             if (!fs.existsSync(exePath)) {
                 throw new Error(`MatcherCapture executable not found: ${exePath}`);
             }
             // Always use a session directory
-            const sessionDir = path.join(this.tempDir, sessionId || (Date.now() + '_' + Math.random().toString(36).slice(2)));
+            const sessionDir = path.join(this.tempDir, (Date.now() + '_' + Math.random().toString(36).slice(2)));
             if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
             this.logger.info('Starting fingerprint capture:', exePath, 'Session dir:', sessionDir);
             const result = execSync(`"${exePath}" capture "${sessionDir}"`, {
@@ -349,11 +411,12 @@ class BiometricService {
             if (!fs.existsSync(bmpPath) || !fs.existsSync(tplPath)) {
                 throw new Error('Fingerprint image or template not found after capture');
             }
+
             return {
                 bmpPath,
                 tplPath,
-                bmpBuffer: fs.readFileSync(bmpPath),
-                tplBuffer: fs.readFileSync(tplPath),
+                bmpBase64: fs.readFileSync(bmpPath).toString('base64'),
+                tplBase64: fs.readFileSync(tplPath).toString('base64'),
                 sessionDir
             };
         } catch (error) {
@@ -439,6 +502,7 @@ class BiometricService {
     // Quality
     async getQuality({ image, template }) {
         try {
+            console.log('Getting quality for', image ? 'image' : (template ? 'template' : 'none'));
             const exePath = path.join(process.cwd(), 'MatcherCapture', 'bin', 'Release', 'net6.0-windows', 'MatcherCapture.exe');
             if (!fs.existsSync(exePath)) throw new Error('MatcherCapture executable not found');
             const tempDir = this.tempDir;

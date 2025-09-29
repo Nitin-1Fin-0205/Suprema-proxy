@@ -36,9 +36,9 @@ class LocalBiometricDB {
                     finger_position TEXT NOT NULL,
                     template_data TEXT NOT NULL,
                     quality_score INTEGER DEFAULT 0,
+                    isactive INTEGER BOOLEAN DEFAULT true,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(customer_id, finger_position)
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 );
             `);
 
@@ -55,10 +55,32 @@ class LocalBiometricDB {
     }
 
     // Store biometric template data
-    storeTemplate(templateData) {
+     storeTemplate(templateData) {
         try {
+            const existing =  this.db.prepare(`
+                SELECT id FROM biometric_templates 
+                WHERE customer_id = ? AND isactive = true AND finger_position = ?
+            `).get(templateData.customer_id, templateData.finger_position);
+
+            console.log(existing);
+
+            if (existing) {
+                this.logger.info(`Template already exists for customer: ${templateData.customer_id}, finger: ${templateData.finger_position}`);
+
+                const updateStmt = this.db.prepare(`
+                    UPDATE biometric_templates 
+                    SET isactive = false, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ? 
+                `);
+                updateStmt.run(existing.id);
+            }
+            console.log(this.db.prepare(`
+                SELECT id FROM biometric_templates 
+                WHERE customer_id = ? AND isactive = true AND finger_position = ?
+            `).get(templateData.customer_id, templateData.finger_position))
+
             const stmt = this.db.prepare(`
-                INSERT OR REPLACE INTO biometric_templates 
+                INSERT INTO biometric_templates 
                 (customer_id, finger_position, template_data, quality_score, updated_at)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             `);
@@ -83,6 +105,7 @@ class LocalBiometricDB {
             const stmt = this.db.prepare(`
                 SELECT id, customer_id, finger_position, template_data, quality_score, created_at
                 FROM biometric_templates
+                WHERE isactive = true
                 ORDER BY created_at ASC
             `);
             const templates = stmt.all();
@@ -99,7 +122,7 @@ class LocalBiometricDB {
         try {
             const stmt = this.db.prepare(`
                 SELECT * FROM biometric_templates 
-                WHERE customer_id = ?
+                WHERE customer_id = ? AND isactive = true
                 ORDER BY created_at ASC
             `);
             const templates = stmt.all(customerId);

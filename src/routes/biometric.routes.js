@@ -279,6 +279,46 @@ class BiometricRoutes {
                 return res.status(500).json({ success: false, error: error.message });
             }
         });
+
+        // Manual backup endpoint
+        this.router.post('/backup', async (req, res) => {
+            try {
+                this.setCorsHeaders(req, res);
+                const { reason } = req.body;
+                const backupPath = await this.biometricService.localDB.createBackup(reason || 'manual');
+                res.json({
+                    success: true,
+                    message: 'Backup created successfully',
+                    backup_path: backupPath
+                });
+            } catch (error) {
+                this.logger.error('Manual backup error:', error.message);
+                this.setCorsHeaders(req, res);
+                res.status(500).json({
+                    success: false,
+                    error: error.message
+                });
+            }
+        });
+
+        // Get backup information endpoint
+        this.router.get('/backup-info', async (req, res) => {
+            try {
+                this.setCorsHeaders(req, res);
+                const backupInfo = this.biometricService.localDB.getBackupInfo();
+                res.json({
+                    success: true,
+                    data: backupInfo
+                });
+            } catch (error) {
+                this.logger.error('Get backup info error:', error.message);
+                this.setCorsHeaders(req, res);
+                res.status(500).json({
+                    success: false,
+                    error: error.message
+                });
+            }
+        });
     }
 
     // Get the configured router

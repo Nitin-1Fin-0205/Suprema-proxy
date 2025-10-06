@@ -4,13 +4,13 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const { execSync, execFile } = require('child_process');
-const BiometricEncryptionHelper = require('../utils/encryption.helper');
+// const BiometricEncryptionHelper = require('../utils/encryption.helper');
 const LocalBiometricDB = require('../database/local-biometric.db');
 const SecureBiometricEncryption = require('../utils/secure-encryption.helper');
 
 class BiometricService {
     constructor(logger, config) {
-        this.apiURL = 'https://support-backend.onefin.app';
+        this.apiURL = process.env.REMOTE_API_URL || 'https://support-backend.onefin.app';
         this.logger = logger;
         this.tempDir = path.join(process.cwd(), 'temp_templates');
 
@@ -25,14 +25,14 @@ class BiometricService {
             throw error;
         }
 
-        // Initialize legacy encryption helper (backward compatibility)
-        try {
-            this.encryptionHelper = new BiometricEncryptionHelper();
-            this.logger.info('Legacy biometric encryption helper initialized successfully');
-        } catch (error) {
-            this.logger.warn('Legacy biometric encryption helper not available:', error.message);
-            this.encryptionHelper = null;
-        }
+        // // Deprecated Initialize legacy encryption helper (backward compatibility)
+        // try {
+        //     this.encryptionHelper = new BiometricEncryptionHelper();
+        //     this.logger.info('Legacy biometric encryption helper initialized successfully');
+        // } catch (error) {
+        //     this.logger.warn('Legacy biometric encryption helper not available:', error.message);
+        //     this.encryptionHelper = null;
+        // }
 
         // Initialize local database
         try {

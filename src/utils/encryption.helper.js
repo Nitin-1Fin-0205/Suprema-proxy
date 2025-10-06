@@ -1,4 +1,6 @@
 // src/utils/encryption.helper.js
+
+// Deprecated: This module provides biometric template encryption and decryption using AES-256-CBC.
 const crypto = require('crypto');
 
 class BiometricEncryptionHelper {

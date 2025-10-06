@@ -44,7 +44,11 @@ function startSecureProxy() {
         console.log('========================================');
         console.log(`  HTTPS URL: https://localhost:${config.port}`);
         console.log(`  Health: https://localhost:${config.port}/health`);
-        console.log(`  Biometric ID: https://localhost:${config.port}/api/identify-fingerprint`);
+        console.log(`  Biometric ID: https://localhost:${config.port}/bio/identify-fingerprint`);
+        console.log(`  Capture: https://localhost:${config.port}/bio/capture-fingerprint`);
+        console.log(`  List Templates: https://localhost:${config.port}/bio/list-biometrics/:customerId`);
+        console.log(`  Manual Backup: https://localhost:${config.port}/bio/backup`);
+        console.log(`  Backup Info: https://localhost:${config.port}/bio/backup-info`);
         console.log('  Certificate: 10-year self-signed');
         console.log('========================================');
         if (process.platform === 'win32') {

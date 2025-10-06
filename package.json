@@ -5,7 +5,7 @@
   "main": "src/app.js",
   "bin": "src/app.js",
   "scripts": {
-    "build-secure": "pkg src/server.js --targets node18-win-x64 --output dist/suprema-secure-proxy.exe ",
+    "build-secure": "pkg src/server.js --targets node18-win-x64 --output suprema-secure-proxy.exe",
     "build-production": "pkg src/server.js --targets node18-win-x64 --output production-deployment/suprema-secure-proxy.exe",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
@@ -32,7 +32,7 @@
     ]
   },
   "dependencies": {
-    "better-sqlite3": "^12.4.1",
+    "better-sqlite3": "^9.0.0",
     "dotenv": "^17.2.2",
     "express": "^4.19.2",
     "node-fetch": "3.3.2",

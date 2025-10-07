@@ -1,0 +1,110 @@
+# 🔧 SUPREMA BIOMETRIC PROXY - TROUBLESHOOTING GUIDE
+**Version:** 1.0.0 | **Date:** 07-10-2025
+
+## 🚨 COMMON ISSUES & SOLUTIONS
+
+### ❌ Issue: Service Won't Start
+**Symptoms:** Service shows "STOPPED" or fails to start
+**Solutions:**
+1. Check logs: logs/secure-proxy-YYYY-MM-DD.log
+2. Verify port 4000 is available: netstat -an | findstr ":4000"
+3. Run as Administrator: Right-click START.bat → Run as administrator
+4. Reinstall: Run UNINSTALL.bat, then INSTALL.bat
+5. Check Windows Event Viewer: Windows Logs → Application
+
+### ❌ Issue: "Administrator privileges required"
+**Symptoms:** INSTALL.bat fails with permission error
+**Solutions:**
+1. Right-click INSTALL.bat → "Run as administrator"
+2. If UAC is disabled, enable it temporarily
+3. Use elevated PowerShell: Start-Process INSTALL.bat -Verb RunAs
+
+### ❌ Issue: SSL Certificate Not Trusted
+**Symptoms:** Browser shows "Certificate not trusted" warning
+**Solutions:**
+1. Re-run INSTALL.bat as Administrator
+2. Manual trust: certutil -addstore -f "Root" "certs\localhost.crt"
+3. PowerShell method: Import-Certificate -FilePath "certs\localhost.crt" -CertStoreLocation Cert:\LocalMachine\Root
+4. Browser: Click "Advanced" → "Proceed to localhost ^(unsafe^)"
+
+### ❌ Issue: Port 4000 Already in Use
+**Symptoms:** "EADDRINUSE" error in logs
+**Solutions:**
+1. Find conflicting process: netstat -ano | findstr ":4000"
+2. Kill process: taskkill /PID <PID_NUMBER> /F
+3. Check for other Suprema instances: tasklist | findstr suprema
+4. Restart after cleanup: STOP.bat, then START.bat
+
+### ❌ Issue: Database Lock Error
+**Symptoms:** "Database is locked" in logs
+**Solutions:**
+1. Stop all instances: STOP.bat
+2. Check for zombie processes: tasklist | findstr suprema
+3. Kill all: taskkill /F /IM suprema-secure-proxy.exe
+4. Wait 10 seconds, then START.bat
+5. If persistent: Delete data\biometric.db-wal and data\biometric.db-shm files
+
+### ❌ Issue: Health Endpoint Not Responding
+**Symptoms:** curl fails or times out
+**Solutions:**
+1. Check service status: STATUS.bat
+2. Verify process running: tasklist | findstr suprema
+3. Check port binding: netstat -an | findstr ":4000"
+4. Test localhost: curl -k https://127.0.0.1:4000/health
+5. Check firewall: Windows Defender Firewall → Allow an app
+
+## 🔍 DIAGNOSTIC COMMANDS
+
+### Check System Status
+STATUS.bat                    # Complete system status
+sc query SupremaProxy         # Service status only
+tasklist | findstr suprema    # Process status
+netstat -an | findstr ":4000" # Port status
+
+### View Logs
+type logs\secure-proxy-*.log | more
+# Windows Service logs: eventvwr.msc → Windows Logs → Application → Filter by "SupremaProxy"
+
+### Network Testing
+curl -k https://localhost:4000/health
+curl -k -v https://localhost:4000/health    # Verbose output
+curl -k -X POST https://localhost:4000/bio/device-info
+
+### Certificate Verification
+certutil -store "Root" | findstr localhost
+certutil -dump certs\localhost.crt
+certutil -addstore -f "Root" certs\localhost.crt
+
+## 🛠️ MANUAL RECOVERY PROCEDURES
+
+### Complete Reset
+1. STOP.bat
+2. UNINSTALL.bat (as Administrator)
+3. Wait 30 seconds
+4. INSTALL.bat (as Administrator)
+5. STATUS.bat (verify installation)
+
+### Database Recovery
+1. STOP.bat
+2. Backup: copy data\biometric.db data\biometric.db.backup
+3. Delete: del data\biometric.db-wal data\biometric.db-shm
+4. START.bat
+5. If issues persist: del data\biometric.db (will recreate empty)
+
+## 📞 WHEN TO CONTACT SUPPORT
+
+Contact support if you experience:
+1. **Persistent crashes** after following troubleshooting steps
+2. **Database corruption** that can't be resolved by recreation
+3. **Certificate issues** on domain-joined machines
+4. **Performance problems** affecting biometric matching
+5. **Integration issues** with specific hardware
+
+## 📁 SUPPORT INFORMATION TO COLLECT
+
+Before contacting support, gather:
+1. STATUS.bat output (full text)
+2. Latest log file: logs\secure-proxy-*.log
+3. Windows Event Viewer entries for "SupremaProxy"
+4. System information: systeminfo > system-info.txt
+5. Network configuration: ipconfig /all > network-info.txt

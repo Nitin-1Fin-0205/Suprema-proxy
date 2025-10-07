@@ -15,7 +15,9 @@ class SecureBiometricEncryption {
 
     initializeMasterKey() {
         // Get master key from environment variable or generate new one
-        const envKey = process.env.BIOMETRIC_MASTER_KEY;
+        // const envKey = process.env.BIOMETRIC_MASTER_KEY;
+        const envKey = '41c6fcb2b74984192296b52df604098152ddfc4e1528d0b0c1779982c73fad16';
+
         console.log('Environment key:', envKey ? 'Found' : 'Not found');
 
         if (envKey) {

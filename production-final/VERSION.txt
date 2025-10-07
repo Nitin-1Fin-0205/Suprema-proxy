@@ -1,0 +1,75 @@
+# 🚀 SUPREMA BIOMETRIC PROXY - PRODUCTION PACKAGE
+**Version:** 1.0.0
+**Build Date:** 07-10-2025
+**Package Type:** Production Ready - Standalone
+**Node.js Target:** 18.20.4 (LTS - Embedded)
+
+## 📦 TECHNICAL SPECIFICATIONS
+
+### Backend Stack
+- **Runtime**: Node.js 18.20.4 (Embedded in executable)
+- **Database**: SQLite with better-sqlite3 v8.7.0
+- **Encryption**: AES-256-GCM for biometric templates
+- **SSL/TLS**: Self-signed certificates with auto-trust
+- **Build Tool**: pkg v5.8.1 for single executable
+
+### Biometric Engine
+- **Framework**: .NET 6.0 Windows (self-contained)
+- **SDK**: Suprema UFMatcher
+- **Template Format**: Suprema proprietary
+- **Verification**: 1:1 and 1:N matching support
+- **Quality Check**: Built-in template validation
+
+### Security Features
+- **Local Storage**: Encrypted SQLite database
+- **Master Key**: Environment-based encryption keys
+- **Certificate Trust**: Automatic Windows Trust Store integration
+- **Data Retention**: 30-day automatic backup cleanup
+- **Access Control**: CORS validation for allowed origins
+
+## 🌐 API ENDPOINTS
+
+### Biometric Operations (Port 4000)
+- POST /bio/identify-fingerprint - Identify fingerprint against database
+- POST /bio/verify-fingerprint - 1:1 fingerprint verification
+- POST /bio/capture-fingerprint - Capture fingerprint from device
+- POST /bio/store-template - Store encrypted biometric template
+- GET /bio/list-biometrics/:customerId - Retrieve customer templates
+- POST /bio/backup - Manual database backup
+- GET /bio/backup-info - Backup system information
+
+### System Management
+- GET /health - System health check
+- GET /bio/device-info - Device information
+- GET /bio/list-devices - Available devices
+
+### Advanced Features
+✅ **Local Database System**: SQLite with WAL Mode
+✅ **Template-Level Encryption**: AES-256-GCM with customer-specific salts
+✅ **PBKDF2 Key Derivation**: 100,000 iterations for enhanced security
+✅ **Automatic Backups**: Daily backups with 30-day retention policy
+✅ **Manual Backup API**: On-demand backup creation with metadata
+✅ **Backup Monitoring**: Comprehensive backup information endpoints
+✅ **Database Schema**: Optimized single-table design with indexes
+✅ **WAL Journal Mode**: Better concurrency and crash recovery
+
+## 🚀 DEPLOYMENT REQUIREMENTS
+
+### Client Machine Requirements
+- **OS**: Windows 7+ (x64)
+- **RAM**: 512 MB minimum (1 GB recommended)
+- **Disk**: 200 MB free space
+- **Network**: Internet access for API calls
+- **Privileges**: Administrator rights for installation only
+
+### NOT REQUIRED on Client Machine
+- ❌ Node.js installation
+- ❌ .NET Framework installation
+- ❌ Visual C++ Redistributables
+- ❌ Additional dependencies
+- ❌ Manual configuration
+
+---
+**Build Info**: pkg v5.8.1 | better-sqlite3 v8.7.0 | Express v4.19.2
+**Compatibility**: Windows 7, 8, 10, 11 (x64)
+**License**: Production Deployment Package

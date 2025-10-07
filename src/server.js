@@ -37,7 +37,6 @@ function startSecureProxy() {
             targetServer: config.targetServer,
             allowedOrigins: config.allowedOrigins,
             sslCert: 'Self-signed (10-year validity)',
-            environment: config.isDevelopment ? 'development' : 'production'
         });
         console.log('========================================');
         console.log('  SUPREMA SECURE HTTPS PROXY STARTED  ');

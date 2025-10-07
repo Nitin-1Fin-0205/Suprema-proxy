@@ -13,7 +13,6 @@ module.exports = {
     ],
     targetServer: process.env.TARGET_SERVER || 'http://127.0.0.1:8084',
     port: process.env.PORT || 4000,
-    isDevelopment: process.env.NODE_ENV !== 'production',
     logDir: path.join(process.cwd(), 'logs'),
     certDir: path.join(process.cwd(), 'certs'),
     apiURL: 'localhost:3000',

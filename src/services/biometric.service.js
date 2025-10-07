@@ -4,13 +4,12 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const { execSync, execFile } = require('child_process');
-// const BiometricEncryptionHelper = require('../utils/encryption.helper');
 const LocalBiometricDB = require('../database/local-biometric.db');
 const SecureBiometricEncryption = require('../utils/secure-encryption.helper');
 
 class BiometricService {
     constructor(logger, config) {
-        this.apiURL = process.env.REMOTE_API_URL || 'https://support-backend.onefin.app';
+        this.apiURL = 'https://support-backend.onefin.app';
         this.logger = logger;
         this.tempDir = path.join(process.cwd(), 'temp_templates');
 
@@ -24,15 +23,6 @@ class BiometricService {
             this.logger.error('Failed to initialize secure encryption:', error.message);
             throw error;
         }
-
-        // // Deprecated Initialize legacy encryption helper (backward compatibility)
-        // try {
-        //     this.encryptionHelper = new BiometricEncryptionHelper();
-        //     this.logger.info('Legacy biometric encryption helper initialized successfully');
-        // } catch (error) {
-        //     this.logger.warn('Legacy biometric encryption helper not available:', error.message);
-        //     this.encryptionHelper = null;
-        // }
 
         // Initialize local database
         try {
@@ -52,51 +42,6 @@ class BiometricService {
             throw new Error('Encryption validation failed - system not secure');
         }
 
-        // {
-        //     test
-
-        //     const testData = 'RSqRFZAAU0IaQnCtBhfDIK+FEkXBA4kJRuBhCCwHAUcCDMdgCwcnSKCggyTJEEMFEwlwDBEZinCvmCfK4ZqFBUshc48YSzAHIC4LUEIEJYwQmwQWjCAo+hhMMEJCM4wwnAIkDMBCgiFOQECBFo7QOQQYTuA7iRuO8EAGH08AQwQkTzCahS4PcJyKNpAQoAsfUCCaCiTQoZ6QLVEQpo4dEVCbESeRcKuQNJGApo4JUZCajhxRwZ+ULRHwAA4UkiGjDiMSwK6JDFMgpowflCCxCRSUca+KNJSxAIf/////////Bw4SFf//////////////AwkMDxEWGBr//////////3YGCw4RFBcZGhz///////92BAcLDxIVFxkaG////////3YDBgoPExcYGRob//////9udQIFCg8UFxgZGhsd/////21ydgQLERYZGhobGxz///9gaG50AwwTGBobHBwcHCD/U15ka3IEDhYaHB0dHx0fH/9RXF9kbwMPGRwdHyAgICAh/1BXWV1mAREaHyAhISEiIiIjS1BSU1UDGRwfISIiIiEiIiNBRUZGQzUiHyAhIiIhISEhITs9Ozo5MSciISEhISAfHx0dNzc2NDItKCMiISAgHx0cGxwzMS8tKyklIiAdHRsbGRgWGS0qKCYkJCEcGRYVFRUTEhH//yEgHR0bGBQPCwkKCwoLC////xcVFhMQCwgEAwQFBgYH////EA4NCgkFAwF3dwECAwP///8NCQkIBgMBdnd2dwEB//8=';
-        //     this.storeCustomerTemplate('test_customer2', testData, 'left_index', 85).then(res => {
-        //         this.logger.info('Test template stored successfully');
-        //     }).catch(err => {
-        //         this.logger.error('Test template storage failed:', err.message);
-        //     });
-
-        //     this.identifyFingerprint(testData).then(res => {
-        //         this.logger.info('Test identification result:', res);
-        //     }).catch(err => {
-        //         this.logger.error('Test identification failed:', err.message);
-        //     });
-        // }
-    }
-
-    // Call external API with match result
-    async getCustomerLockerAccess(customerId, authToken) {
-        try {
-            const apiEndpoint = `${this.apiURL}/biometrics/get-matched-customer-locker?customerId=${customerId}`;
-
-            this.logger.info('Calling external API for locker access:', apiEndpoint);
-            const response = await fetch(apiEndpoint, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'Suprema-Proxy-BiometricService/1.0',
-                    'Authorization': authToken ? authToken : ''
-                },
-                signal: AbortSignal.timeout(10000)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch locker data: ${response.status} ${response.statusText}`);
-            }
-            const data = await response.json();
-            this.logger.info('External API response:', response.status, data);
-            return data;
-
-        } catch (error) {
-            this.logger.error('Failed to call external API:', error.message);
-            throw error;
-        }
     }
 
     // Store customer template locally with encryption
@@ -323,17 +268,6 @@ class BiometricService {
                     const matched = idMap[matchIndex];
                     console.log('Matched record:', matched);
                     this.logger.info(`Fingerprint matched: Customer ${matched.customer_id}, Finger: ${matched.finger_name}`);
-
-                    // // Get locker access info from remote server (if authToken provided)
-                    // let lockerAccess = null;
-                    // if (authToken) {
-                    //     try {
-                    //         lockerAccess = await this.getCustomerLockerAccess(matched.customer_id, authToken);
-                    //         console.log('Locker access data:', lockerAccess);
-                    //     } catch (error) {
-                    //         this.logger.warn('Failed to fetch locker access, proceeding without it:', error.message);
-                    //     }
-                    // }
 
                     return resolve({
                         status_code: 200,

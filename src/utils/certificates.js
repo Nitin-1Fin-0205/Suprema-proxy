@@ -24,29 +24,46 @@ function autoTrustCertificate(certDir, logger) {
         logger.warn('Certificate file not found, cannot auto-trust');
         return false;
     }
+
     try {
         logger.info('Attempting to auto-trust SSL certificate...');
+
+        // Method 1: Use certutil (most reliable on Windows)
         try {
-            execSync(`certlm.exe -add -c "${certPath}" -s -r localMachine root`, { stdio: 'ignore', timeout: 10000 });
-            logger.info('✅ Certificate automatically trusted system-wide');
+            const certutilCmd = `certutil -addstore -f "Root" "${certPath}"`;
+            execSync(certutilCmd, { stdio: 'ignore', timeout: 15000 });
+            logger.info('✅ Certificate automatically trusted via certutil');
             return true;
-        } catch {
-            logger.warn('certlm.exe failed, trying PowerShell method...');
+        } catch (certutilError) {
+            logger.warn('certutil failed, trying PowerShell method...');
         }
+
+        // Method 2: PowerShell fallback
         try {
             const powershellCmd = `Import-Certificate -FilePath \"${certPath}\" -CertStoreLocation Cert:\\LocalMachine\\Root`;
-            execSync(`powershell -Command "${powershellCmd}"`, { stdio: 'ignore', timeout: 10000 });
+            execSync(`powershell -Command "${powershellCmd}"`, { stdio: 'ignore', timeout: 15000 });
             logger.info('✅ Certificate automatically trusted via PowerShell');
             return true;
-        } catch {
+        } catch (psError) {
             logger.warn('PowerShell import failed');
         }
+
+        // Method 3: Try elevated PowerShell
+        try {
+            const elevatedCmd = `powershell -Command "Start-Process powershell -ArgumentList '-Command Import-Certificate -FilePath \\\"${certPath}\\\" -CertStoreLocation Cert:\\\\LocalMachine\\\\Root' -Verb RunAs -Wait"`;
+            execSync(elevatedCmd, { stdio: 'ignore', timeout: 20000 });
+            logger.info('✅ Certificate automatically trusted via elevated PowerShell');
+            return true;
+        } catch (elevatedError) {
+            logger.warn('Elevated PowerShell import failed');
+        }
+
         logger.warn('❌ Could not auto-trust certificate (requires admin privileges)');
+        logger.info('💡 To manually trust: Run as Administrator and execute: npm run trust-cert');
         return false;
     } catch (error) {
         logger.warn('Certificate trust process failed:', error.message);
         return false;
     }
 }
-
 module.exports = { ensureCertificatesExist, autoTrustCertificate };
